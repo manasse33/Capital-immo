@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Capital Immo Group</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#113f5c" />
+      <stop offset="100%" stop-color="#0d354e" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  <path
+    d="M13 25.5 32 15l19 10.5"
+    fill="none"
+    stroke="#d9ecec"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3.5"
+  />
+  <path
+    d="M16 25h32M19 27v21M45 27v21M24 27v21M32 27v21M40 27v21M16 48h32"
+    fill="none"
+    stroke="#ffffff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="M28.5 48v-9.5c0-2 1.6-3.5 3.5-3.5s3.5 1.5 3.5 3.5V48"
+    fill="none"
+    stroke="#86b8b9"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+</svg>
+
