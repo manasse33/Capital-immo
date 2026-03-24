@@ -18,7 +18,7 @@ export default function Navbar() {
   const isHomePage = location.pathname === '/';
   const useTransparentNavbar = isHomePage && !isScrolled && !isMobileMenuOpen;
   const navbarClasses = useTransparentNavbar
-    ? 'bg-transparent py-4'
+    ? 'bg-[#0D354E]/95 py-2 shadow-lg lg:bg-transparent lg:py-4 lg:shadow-none'
     : 'bg-[#0D354E]/95 backdrop-blur-md shadow-lg py-2';
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-[#0D354E]/98 backdrop-blur-lg transition-all duration-300 overflow-hidden ${
+        className={`lg:hidden absolute top-full left-0 right-0 bg-[#0D354E] shadow-xl transition-all duration-300 overflow-hidden ${
           isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
