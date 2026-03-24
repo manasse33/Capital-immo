@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Home, MapPin, Phone, Mail, Facebook, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, ChevronRight } from 'lucide-react';
 import { entrepriseInfo } from '../data/entreprise';
+import { staticAssets } from '@/assets';
 
 const quickLinks = [
   { path: '/', label: 'Accueil' },
@@ -39,14 +40,12 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
             {/* Company Info */}
             <div className="lg:col-span-1">
-              <Link to="/" className="flex items-center gap-2 mb-6">
-                <div className="w-10 h-10 bg-[#7A9E9F] rounded-lg flex items-center justify-center">
-                  <Home className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-script text-xl text-white leading-none">Capital</span>
-                  <span className="text-xs text-[#7A9E9F] font-semibold tracking-wider">IMMO GROUP</span>
-                </div>
+              <Link to="/" className="inline-flex mb-6">
+                <img
+                  src={staticAssets.logo}
+                  alt="Capital Immo Group"
+                  className="h-[4.5rem] w-auto object-contain"
+                />
               </Link>
               <p className="text-white/70 text-sm leading-relaxed mb-6">
                 {entrepriseInfo.slogan}

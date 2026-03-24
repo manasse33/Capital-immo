@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, Phone, Home, Building, Users, Briefcase, Mail } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { staticAssets } from '@/assets';
 
 const navLinks = [
   { path: '/', label: 'Accueil', icon: Home },
@@ -14,6 +15,11 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  const useTransparentNavbar = isHomePage && !isScrolled && !isMobileMenuOpen;
+  const navbarClasses = useTransparentNavbar
+    ? 'bg-transparent py-4'
+    : 'bg-[#0D354E]/95 backdrop-blur-md shadow-lg py-2';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,23 +35,17 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-[#0D354E]/95 backdrop-blur-md shadow-lg py-2'
-          : 'bg-transparent py-4'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navbarClasses}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-[#7A9E9F] rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
-              <Home className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-script text-xl text-white leading-none">Capital</span>
-              <span className="text-xs text-[#7A9E9F] font-semibold tracking-wider">IMMO GROUP</span>
-            </div>
+          <Link to="/" className="group shrink-0">
+            <img
+              src={staticAssets.logo}
+              alt="Capital Immo Group"
+              className="h-14 w-auto object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-transform group-hover:scale-[1.02] sm:h-16"
+            />
           </Link>
 
           {/* Desktop Navigation */}
