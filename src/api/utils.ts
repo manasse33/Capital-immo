@@ -10,10 +10,10 @@ export const unwrapList = <T,>(payload: T[] | ApiPaginated<T>) => {
 const isFileLike = (value: unknown): value is File | Blob =>
   value instanceof File || value instanceof Blob;
 
-export const toFormData = (data: Record<string, unknown>) => {
+export const toFormData = <T extends object>(data: T) => {
   const formData = new FormData();
 
-  Object.entries(data).forEach(([key, value]) => {
+  Object.entries(data as Record<string, unknown>).forEach(([key, value]) => {
     if (value === undefined || value === null) {
       return;
     }

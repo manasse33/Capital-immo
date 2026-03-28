@@ -72,13 +72,13 @@ export const getBiensStats = async () => {
 };
 
 export const createBien = async (payload: BienPayload) => {
-  const formData = toFormData(payload as Record<string, unknown>);
+  const formData = toFormData(payload);
   const response = await api.post<ApiBien>('/biens', formData);
   return response.data;
 };
 
 export const updateBien = async (bienId: string | number, payload: Partial<BienPayload>) => {
-  const formData = toFormData(payload as Record<string, unknown>);
+  const formData = toFormData(payload);
   const response = await api.put<ApiBien>(`/biens/${bienId}`, formData);
   return response.data;
 };
