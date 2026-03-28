@@ -27,6 +27,10 @@ export const toFormData = <T extends object>(data: T) => {
           formData.append(`${key}[]`, item);
           return;
         }
+        if (typeof item === 'boolean') {
+          formData.append(`${key}[]`, item ? '1' : '0');
+          return;
+        }
         if (typeof item === 'object') {
           formData.append(`${key}[]`, JSON.stringify(item));
           return;
@@ -38,6 +42,11 @@ export const toFormData = <T extends object>(data: T) => {
 
     if (isFileLike(value)) {
       formData.append(key, value);
+      return;
+    }
+
+    if (typeof value === 'boolean') {
+      formData.append(key, value ? '1' : '0');
       return;
     }
 
