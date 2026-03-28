@@ -19,7 +19,7 @@ import {
   type BienPayload,
 } from '../../api/biens';
 import type { ApiBien, BienStatut, BienTransaction, BienType } from '../../api/types';
-import { formatPrix } from '../../utils/format';
+ 
 
 type ImagePreview = {
   id: string;
@@ -50,6 +50,20 @@ const emptyForm: BienPayload = {
 const types: BienType[] = ['maison', 'villa', 'appartement', 'local', 'terrain'];
 const transactions: BienTransaction[] = ['vente', 'location'];
 const statuts: BienStatut[] = ['disponible', 'vendu', 'reserve'];
+const LOCATION_MENSUELLE = 'Location mensuelle';
+const LOCATION_JOURNALIERE = 'Location journalière';
+
+const FieldLabel = ({
+  label,
+  required,
+}: {
+  label: string;
+  required?: boolean;
+}) => (
+  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+    {label} {required ? <span className="text-red-500">*</span> : null}
+  </span>
+);
 
 export default function AdminBiens() {
   const [biens, setBiens] = useState<ApiBien[]>([]);
@@ -63,6 +77,7 @@ export default function AdminBiens() {
   const [editingBien, setEditingBien] = useState<ApiBien | null>(null);
   const [form, setForm] = useState<BienPayload>(emptyForm);
   const [equipementsText, setEquipementsText] = useState('');
+  const [locationPeriod, setLocationPeriod] = useState<'mensuel' | 'journalier' | ''>('');
   const [newImagePreviews, setNewImagePreviews] = useState<ImagePreview[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -76,6 +91,12 @@ export default function AdminBiens() {
       resetUploadedImages(newImagePreviews);
     };
   }, [newImagePreviews]);
+
+  useEffect(() => {
+    if (form.transaction !== 'location') {
+      setLocationPeriod('');
+    }
+  }, [form.transaction]);
 
   const loadBiens = async () => {
     setLoading(true);
@@ -145,6 +166,7 @@ export default function AdminBiens() {
     setEditingBien(null);
     setForm(emptyForm);
     setEquipementsText('');
+    setLocationPeriod('');
   };
 
   const openCreateDrawer = () => {
@@ -153,6 +175,15 @@ export default function AdminBiens() {
   };
 
   const openEditDrawer = (bien: ApiBien) => {
+    const existingCaracs = bien.caracteristiques ?? [];
+    const period =
+      bien.location_period ??
+      (existingCaracs.includes(LOCATION_JOURNALIERE)
+        ? 'journalier'
+        : existingCaracs.includes(LOCATION_MENSUELLE)
+          ? 'mensuel'
+          : '');
+
     resetUploadedImages(newImagePreviews);
     setNewImagePreviews([]);
     setEditingBien(bien);
@@ -167,15 +198,21 @@ export default function AdminBiens() {
       etage: bien.etage ?? null,
       type: bien.type,
       transaction: bien.transaction,
+      location_period: bien.location_period ?? null,
       zone: bien.zone,
       quartier: bien.quartier,
       reference: bien.reference,
       statut: bien.statut,
       en_vedette: bien.en_vedette,
-      caracteristiques: bien.caracteristiques ?? [],
+      caracteristiques: existingCaracs,
       images: [],
     });
-    setEquipementsText((bien.caracteristiques ?? []).join('\n'));
+    setEquipementsText(
+      existingCaracs
+        .filter((item) => item !== LOCATION_MENSUELLE && item !== LOCATION_JOURNALIERE)
+        .join('\n')
+    );
+    setLocationPeriod(period);
     setDrawerOpen(true);
   };
 
@@ -217,13 +254,23 @@ export default function AdminBiens() {
     event.preventDefault();
     setSaving(true);
 
+    if (form.transaction === 'location' && !locationPeriod) {
+      toast.error('Veuillez prÃ©ciser le type de location.');
+      setSaving(false);
+      return;
+    }
+
+    const baseEquipements = equipementsText
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .filter((item) => item !== LOCATION_MENSUELLE && item !== LOCATION_JOURNALIERE);
+
     const payload: BienPayload = {
       ...form,
       reference: form.reference?.trim() ? form.reference.trim() : undefined,
-      caracteristiques: equipementsText
-        .split('\n')
-        .map((item) => item.trim())
-        .filter(Boolean),
+      caracteristiques: baseEquipements,
+      location_period: form.transaction === 'location' ? (locationPeriod || undefined) : null,
       images: newImagePreviews.length > 0 ? newImagePreviews.map((preview) => preview.file) : undefined,
     };
 
@@ -328,7 +375,9 @@ export default function AdminBiens() {
       {
         key: 'prix',
         header: 'Prix',
-        render: (bien) => <span className="text-sm font-semibold text-slate-800">{formatPrix(bien.prix, bien.transaction)}</span>,
+        render: (bien) => (
+          <span className="text-sm font-semibold text-slate-800">{bien.prix} FCFA</span>
+        ),
       },
       {
         key: 'vedette',
@@ -519,26 +568,36 @@ export default function AdminBiens() {
               Informations generales
             </h3>
             <div className="space-y-4">
-              <input
-                value={form.titre}
-                onChange={(event) => setForm((prev) => ({ ...prev, titre: event.target.value }))}
-                placeholder="Titre"
-                required
-                className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <textarea
-                value={form.description}
-                onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                placeholder="Description"
-                rows={4}
-                className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                value={form.reference ?? ''}
-                onChange={(event) => setForm((prev) => ({ ...prev, reference: event.target.value }))}
-                placeholder={referencePlaceholder}
-                className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
+              <label className="grid gap-2">
+                <FieldLabel label="Titre" required />
+                <input
+                  value={form.titre}
+                  onChange={(event) => setForm((prev) => ({ ...prev, titre: event.target.value }))}
+                  placeholder="Ex: Villa contemporaine"
+                  required
+                  className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Description" required />
+                <textarea
+                  value={form.description}
+                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                  placeholder="DÃ©crire le bien en dÃ©tails..."
+                  rows={4}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="RÃ©fÃ©rence (optionnel)" />
+                <input
+                  value={form.reference ?? ''}
+                  onChange={(event) => setForm((prev) => ({ ...prev, reference: event.target.value }))}
+                  placeholder={referencePlaceholder}
+                  className="h-9 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
             </div>
           </section>
 
@@ -547,18 +606,26 @@ export default function AdminBiens() {
               Localisation
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
-              <input
-                value={form.zone}
-                onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))}
-                placeholder="Zone"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                value={form.quartier}
-                onChange={(event) => setForm((prev) => ({ ...prev, quartier: event.target.value }))}
-                placeholder="Quartier"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
+              <label className="grid gap-2">
+                <FieldLabel label="Zone" required />
+                <input
+                  value={form.zone}
+                  onChange={(event) => setForm((prev) => ({ ...prev, zone: event.target.value }))}
+                  placeholder="Ex: Centre-ville"
+                  required
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Quartier" required />
+                <input
+                  value={form.quartier}
+                  onChange={(event) => setForm((prev) => ({ ...prev, quartier: event.target.value }))}
+                  placeholder="Ex: Poto-Poto"
+                  required
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
             </div>
           </section>
 
@@ -567,97 +634,146 @@ export default function AdminBiens() {
               Caracteristiques
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
-              <select
-                value={form.type}
-                onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value as BienType }))}
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              >
-                {types.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.transaction}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, transaction: event.target.value as BienTransaction }))
-                }
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              >
-                {transactions.map((transaction) => (
-                  <option key={transaction} value={transaction}>
-                    {transaction}
-                  </option>
-                ))}
-              </select>
+              <label className="grid gap-2">
+                <FieldLabel label="Type" required />
+                <select
+                  value={form.type}
+                  onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value as BienType }))}
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                >
+                  {types.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Transaction" required />
+                <select
+                  value={form.transaction}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, transaction: event.target.value as BienTransaction }))
+                  }
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                >
+                  {transactions.map((transaction) => (
+                    <option key={transaction} value={transaction}>
+                      {transaction}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
+            {form.transaction === 'location' && (
+              <label className="grid gap-2 md:max-w-xs">
+                <FieldLabel label="Type de location" required />
+                <select
+                  value={locationPeriod}
+                  onChange={(event) =>
+                    setLocationPeriod(event.target.value as 'mensuel' | 'journalier' | '')
+                  }
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                  required
+                >
+                  <option value="">SÃ©lectionner</option>
+                  <option value="mensuel">Location mensuelle</option>
+                  <option value="journalier">Location journaliÃ¨re</option>
+                </select>
+              </label>
+            )}
+
             <div className="grid gap-4 md:grid-cols-2">
-              <input
-                type="number"
-                value={form.surface}
-                onChange={(event) => setForm((prev) => ({ ...prev, surface: Number(event.target.value) }))}
-                placeholder="Surface m2"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                type="number"
-                value={form.prix}
-                onChange={(event) => setForm((prev) => ({ ...prev, prix: Number(event.target.value) }))}
-                placeholder="Prix FCFA"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
+              <label className="grid gap-2">
+                <FieldLabel label="Surface (mÂ²)" required />
+                <input
+                  type="number"
+                  value={form.surface}
+                  onChange={(event) => setForm((prev) => ({ ...prev, surface: Number(event.target.value) }))}
+                  placeholder="Ex: 150"
+                  required
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Prix (FCFA)" required />
+                <input
+                  type="number"
+                  value={form.prix}
+                  onChange={(event) => setForm((prev) => ({ ...prev, prix: Number(event.target.value) }))}
+                  placeholder="Ex: 120000000"
+                  required
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <input
-                type="number"
-                value={form.pieces ?? 0}
-                onChange={(event) => setForm((prev) => ({ ...prev, pieces: Number(event.target.value) }))}
-                placeholder="Pieces"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                type="number"
-                value={form.chambres ?? 0}
-                onChange={(event) => setForm((prev) => ({ ...prev, chambres: Number(event.target.value) }))}
-                placeholder="Chambres"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                type="number"
-                value={form.salle_de_bain ?? 0}
-                onChange={(event) => setForm((prev) => ({ ...prev, salle_de_bain: Number(event.target.value) }))}
-                placeholder="SDB"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
-              <input
-                type="number"
-                value={form.etage ?? ''}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    etage: event.target.value ? Number(event.target.value) : null,
-                  }))
-                }
-                placeholder="Etage"
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              />
+              <label className="grid gap-2">
+                <FieldLabel label="PiÃ¨ces" />
+                <input
+                  type="number"
+                  value={form.pieces ?? 0}
+                  onChange={(event) => setForm((prev) => ({ ...prev, pieces: Number(event.target.value) }))}
+                  placeholder="Ex: 5"
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Chambres" />
+                <input
+                  type="number"
+                  value={form.chambres ?? 0}
+                  onChange={(event) => setForm((prev) => ({ ...prev, chambres: Number(event.target.value) }))}
+                  placeholder="Ex: 3"
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Salle de bain" />
+                <input
+                  type="number"
+                  value={form.salle_de_bain ?? 0}
+                  onChange={(event) => setForm((prev) => ({ ...prev, salle_de_bain: Number(event.target.value) }))}
+                  placeholder="Ex: 2"
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
+              <label className="grid gap-2">
+                <FieldLabel label="Etage" />
+                <input
+                  type="number"
+                  value={form.etage ?? ''}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      etage: event.target.value ? Number(event.target.value) : null,
+                    }))
+                  }
+                  placeholder="Ex: 1"
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                />
+              </label>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <select
-                value={form.statut}
-                onChange={(event) => setForm((prev) => ({ ...prev, statut: event.target.value as BienStatut }))}
-                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-              >
-                {statuts.map((statut) => (
-                  <option key={statut} value={statut}>
-                    {statut}
-                  </option>
-                ))}
-              </select>
+              <label className="grid gap-2">
+                <FieldLabel label="Statut" required />
+                <select
+                  value={form.statut}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, statut: event.target.value as BienStatut }))
+                  }
+                  className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+                >
+                  {statuts.map((statut) => (
+                    <option key={statut} value={statut}>
+                      {statut}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
               <div className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-2.5">
                 <span className="text-sm font-medium text-slate-700">En vedette</span>
@@ -674,13 +790,16 @@ export default function AdminBiens() {
             <h3 className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">
               Equipements
             </h3>
-            <textarea
-              value={equipementsText}
-              onChange={(event) => setEquipementsText(event.target.value)}
-              rows={5}
-              placeholder="Une ligne par equipement"
-              className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-            />
+            <label className="grid gap-2">
+              <FieldLabel label="Ã‰quipements (une ligne par item)" />
+              <textarea
+                value={equipementsText}
+                onChange={(event) => setEquipementsText(event.target.value)}
+                rows={5}
+                placeholder="Ex: Piscine"
+                className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+              />
+            </label>
           </section>
 
           <section className="space-y-4">
