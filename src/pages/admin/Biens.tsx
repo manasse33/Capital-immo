@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Edit3, Home, Plus, Search, Star, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Edit3, Home, Plus, Search, Star, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/admin/PageHeader';
 import DataTable, { type DataTableColumn } from '@/components/admin/DataTable';
@@ -13,12 +13,15 @@ import { Switch } from '@/components/ui/switch';
 import {
   createBien,
   deleteBien,
+  deleteBienImage,
   getBiens,
+  reorderBienImages,
   toggleBienVedette,
   updateBien,
   type BienPayload,
 } from '../../api/biens';
 import type { ApiBien, BienStatut, BienTransaction, BienType } from '../../api/types';
+import { resolveAssetUrl } from '../../api/utils';
  
 
 type ImagePreview = {
@@ -79,6 +82,11 @@ export default function AdminBiens() {
   const [equipementsText, setEquipementsText] = useState('');
   const [locationPeriod, setLocationPeriod] = useState<'mensuel' | 'journalier' | ''>('');
   const [newImagePreviews, setNewImagePreviews] = useState<ImagePreview[]>([]);
+  const [deletingImageIds, setDeletingImageIds] = useState<number[]>([]);
+  const [replaceExistingImages, setReplaceExistingImages] = useState(false);
+  const [draggingExistingId, setDraggingExistingId] = useState<number | null>(null);
+  const [draggingPreviewId, setDraggingPreviewId] = useState<string | null>(null);
+  const [reorderingImages, setReorderingImages] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -167,6 +175,11 @@ export default function AdminBiens() {
     setForm(emptyForm);
     setEquipementsText('');
     setLocationPeriod('');
+    setReplaceExistingImages(false);
+    setDeletingImageIds([]);
+    setDraggingExistingId(null);
+    setDraggingPreviewId(null);
+    setReorderingImages(false);
   };
 
   const openCreateDrawer = () => {
@@ -187,6 +200,7 @@ export default function AdminBiens() {
     resetUploadedImages(newImagePreviews);
     setNewImagePreviews([]);
     setEditingBien(bien);
+    setReplaceExistingImages(false);
     setForm({
       titre: bien.titre,
       description: bien.description,
@@ -233,6 +247,86 @@ export default function AdminBiens() {
     }));
   };
 
+  const moveItem = <T,>(items: T[], fromIndex: number, toIndex: number) => {
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+  };
+
+  const handleReorderExistingImages = async (sourceId: number, targetId: number) => {
+    if (!editingBien || sourceId === targetId) return;
+    const images = editingBien.images ?? [];
+    const fromIndex = images.findIndex((image) => image.id === sourceId);
+    const toIndex = images.findIndex((image) => image.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const reordered = moveItem(images, fromIndex, toIndex).map((image, index) => ({
+      ...image,
+      ordre: index,
+    }));
+
+    setEditingBien((prev) => (prev ? { ...prev, images: reordered } : prev));
+    setBiens((prev) =>
+      prev.map((bien) =>
+        bien.id === editingBien.id ? { ...bien, images: reordered } : bien
+      )
+    );
+
+    setReorderingImages(true);
+    try {
+      await reorderBienImages(
+        editingBien.id,
+        reordered.map((image, index) => ({ id: image.id, ordre: index }))
+      );
+      toast.success('Ordre des images mis a jour');
+    } catch {
+      toast.error("Impossible d'enregistrer l'ordre des images");
+      await loadBiens();
+    } finally {
+      setReorderingImages(false);
+    }
+  };
+
+  const handleReorderNewPreviews = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    setNewImagePreviews((prev) => {
+      const fromIndex = prev.findIndex((item) => item.id === sourceId);
+      const toIndex = prev.findIndex((item) => item.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return prev;
+      const next = moveItem(prev, fromIndex, toIndex);
+      setForm((current) => ({
+        ...current,
+        images: next.map((item) => item.file),
+      }));
+      return next;
+    });
+  };
+
+  const moveExistingImage = (imageId: number, direction: -1 | 1) => {
+    if (!editingBien || reorderingImages) return;
+    const images = editingBien.images ?? [];
+    const fromIndex = images.findIndex((image) => image.id === imageId);
+    const toIndex = fromIndex + direction;
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= images.length) return;
+    const targetId = images[toIndex].id;
+    void handleReorderExistingImages(imageId, targetId);
+  };
+
+  const moveNewPreview = (previewId: string, direction: -1 | 1) => {
+    setNewImagePreviews((prev) => {
+      const fromIndex = prev.findIndex((item) => item.id === previewId);
+      const toIndex = fromIndex + direction;
+      if (fromIndex < 0 || toIndex < 0 || toIndex >= prev.length) return prev;
+      const next = moveItem(prev, fromIndex, toIndex);
+      setForm((current) => ({
+        ...current,
+        images: next.map((item) => item.file),
+      }));
+      return next;
+    });
+  };
+
   const removeNewPreview = (previewId: string) => {
     setNewImagePreviews((prev) => {
       const preview = prev.find((item) => item.id === previewId);
@@ -241,6 +335,9 @@ export default function AdminBiens() {
       }
 
       const next = prev.filter((item) => item.id !== previewId);
+      if (next.length === 0) {
+        setReplaceExistingImages(false);
+      }
       setForm((current) => ({
         ...current,
         images: next.map((item) => item.file),
@@ -250,9 +347,44 @@ export default function AdminBiens() {
     });
   };
 
+  const handleDeleteExistingImage = async (imageId: number) => {
+    if (!editingBien) return;
+
+    setDeletingImageIds((prev) => [...prev, imageId]);
+    try {
+      await deleteBienImage(editingBien.id, imageId);
+      toast.success('Image supprimee');
+      setEditingBien((prev) =>
+        prev
+          ? {
+              ...prev,
+              images: (prev.images ?? []).filter((image) => image.id !== imageId),
+            }
+          : prev
+      );
+      setBiens((prev) =>
+        prev.map((bien) =>
+          bien.id === editingBien.id
+            ? { ...bien, images: (bien.images ?? []).filter((image) => image.id !== imageId) }
+            : bien
+        )
+      );
+    } catch {
+      toast.error("Impossible de supprimer l'image");
+    } finally {
+      setDeletingImageIds((prev) => prev.filter((id) => id !== imageId));
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
+
+    if (replaceExistingImages && newImagePreviews.length === 0) {
+      toast.error('Ajoutez de nouvelles images pour remplacer les existantes.');
+      setSaving(false);
+      return;
+    }
 
     if (form.transaction === 'location' && !locationPeriod) {
       toast.error('Veuillez prÃ©ciser le type de location.');
@@ -272,6 +404,7 @@ export default function AdminBiens() {
       caracteristiques: baseEquipements,
       location_period: form.transaction === 'location' ? (locationPeriod || undefined) : null,
       images: newImagePreviews.length > 0 ? newImagePreviews.map((preview) => preview.file) : undefined,
+      replace_images: editingBien ? replaceExistingImages && newImagePreviews.length > 0 : undefined,
     };
 
     try {
@@ -342,7 +475,10 @@ export default function AdminBiens() {
         render: (bien) => (
           <div className="flex items-center gap-3">
             <img
-              src={bien.images?.[0]?.url ?? 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=120'}
+              src={
+                resolveAssetUrl(bien.images?.[0]?.url) ||
+                'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=120'
+              }
               alt={bien.titre}
               className="h-11 w-11 rounded-lg object-cover"
             />
@@ -820,18 +956,126 @@ export default function AdminBiens() {
 
             {(editingBien?.images?.length || newImagePreviews.length) > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {editingBien?.images?.map((image) => (
-                  <div key={`existing-${image.id}`} className="relative overflow-hidden rounded-xl border border-slate-200">
-                    <img src={image.url} alt={editingBien.titre} className="h-24 w-full object-cover" />
+                {editingBien?.images?.map((image, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === (editingBien.images?.length ?? 0) - 1;
+
+                  return (
+                  <div
+                    key={`existing-${image.id}`}
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggingExistingId(image.id);
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', String(image.id));
+                    }}
+                    onDragEnd={() => setDraggingExistingId(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const sourceId = draggingExistingId ?? Number(event.dataTransfer.getData('text/plain'));
+                      if (!Number.isNaN(sourceId)) {
+                        void handleReorderExistingImages(sourceId, image.id);
+                      }
+                    }}
+                    className={`relative overflow-hidden rounded-xl border border-slate-200 ${
+                      draggingExistingId === image.id ? 'ring-2 ring-[#7A9E9F]/60' : ''
+                    }`}
+                    title="Glisser pour reordonner"
+                  >
+                    <img
+                      src={resolveAssetUrl(image.url)}
+                      alt={editingBien.titre}
+                      className="h-24 w-full object-cover"
+                    />
                     <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-slate-600">
                       Existant
                     </span>
+                    <div className="absolute bottom-2 left-2 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveExistingImage(image.id, -1)}
+                        disabled={isFirst || reorderingImages}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                        title="Monter"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveExistingImage(image.id, 1)}
+                        disabled={isLast || reorderingImages}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                        title="Descendre"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={deletingImageIds.includes(image.id)}
+                      onClick={() => void handleDeleteExistingImage(image.id)}
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Supprimer"
+                    >
+                      {deletingImageIds.includes(image.id) ? (
+                        <Spinner className="h-4 w-4" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
-                ))}
+                );
+                })}
 
-                {newImagePreviews.map((preview) => (
-                  <div key={preview.id} className="relative overflow-hidden rounded-xl border border-slate-200">
+                {newImagePreviews.map((preview, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === newImagePreviews.length - 1;
+
+                  return (
+                  <div
+                    key={preview.id}
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggingPreviewId(preview.id);
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', preview.id);
+                    }}
+                    onDragEnd={() => setDraggingPreviewId(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const sourceId = draggingPreviewId ?? event.dataTransfer.getData('text/plain');
+                      if (sourceId) {
+                        handleReorderNewPreviews(sourceId, preview.id);
+                      }
+                    }}
+                    className={`relative overflow-hidden rounded-xl border border-slate-200 ${
+                      draggingPreviewId === preview.id ? 'ring-2 ring-[#7A9E9F]/60' : ''
+                    }`}
+                    title="Glisser pour reordonner"
+                  >
                     <img src={preview.url} alt={preview.file.name} className="h-24 w-full object-cover" />
+                    <div className="absolute bottom-2 left-2 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveNewPreview(preview.id, -1)}
+                        disabled={isFirst}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                        title="Monter"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveNewPreview(preview.id, 1)}
+                        disabled={isLast}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                        title="Descendre"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeNewPreview(preview.id)}
@@ -840,7 +1084,38 @@ export default function AdminBiens() {
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                ))}
+                );
+                })}
+              </div>
+            )}
+
+            {editingBien?.images?.length && newImagePreviews.length > 0 && (
+              <label className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-2.5">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-slate-700">Remplacer les images existantes</p>
+                  <p className="text-xs text-slate-400">
+                    Les anciennes images seront supprimees a l&apos;enregistrement.
+                  </p>
+                </div>
+                <Switch
+                  checked={replaceExistingImages}
+                  onCheckedChange={(checked) => setReplaceExistingImages(checked)}
+                  className="data-[state=checked]:bg-[#0D354E]"
+                />
+              </label>
+            )}
+
+            {(editingBien?.images?.length || newImagePreviews.length) > 1 && (
+              <p className="text-xs text-slate-400">
+                Astuce: glissez les cartes pour reordonner. L&apos;image en premiere position sera utilisee
+                comme image principale.
+              </p>
+            )}
+
+            {reorderingImages && (
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <Spinner className="h-3 w-3" />
+                Enregistrement de l&apos;ordre...
               </div>
             )}
           </section>

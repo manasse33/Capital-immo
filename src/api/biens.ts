@@ -45,6 +45,7 @@ export interface BienPayload {
   en_vedette?: boolean;
   caracteristiques?: string[];
   images?: File[];
+  replace_images?: boolean;
 }
 
 export const getBiens = async (params?: BienQueryParams) => {

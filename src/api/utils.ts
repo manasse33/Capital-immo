@@ -60,3 +60,23 @@ export const toFormData = <T extends object>(data: T) => {
 
   return formData;
 };
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+
+export const getAssetBaseUrl = () => API_BASE_URL.replace(/\/api\/?$/, '');
+
+const isAbsoluteUrl = (value: string) =>
+  /^https?:\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:');
+
+export const resolveAssetUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (isAbsoluteUrl(url)) return url;
+
+  const base = getAssetBaseUrl();
+  if (!base) return url;
+
+  if (url.startsWith('/')) {
+    return `${base}${url}`;
+  }
+  return `${base}/${url}`;
+};
