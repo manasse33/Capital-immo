@@ -146,8 +146,12 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-[#0D354E] text-white">
       <div className="flex h-16 flex-shrink-0 items-center border-b border-white/10 px-4">
         {collapsed ? (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-xs font-bold text-white transition-all duration-300">
-            CI
+          <div className="mx-auto flex h-12 w-[3.5rem] items-center justify-start overflow-hidden transition-all duration-300">
+            <img
+              src={staticAssets.logo}
+              className="h-full w-auto max-w-none object-left object-contain"
+              alt="Capital Immo Group"
+            />
           </div>
         ) : (
           <img
@@ -360,8 +364,8 @@ export default function AdminLayout() {
 
   const userName = user?.name ?? 'Administrateur';
   const userEmail = user?.email ?? 'capitalimmo.group';
-  const sidebarWidthClass = collapsed ? 'w-[68px]' : 'w-[260px]';
-  const contentMarginClass = collapsed ? 'lg:ml-[68px]' : 'lg:ml-[260px]';
+  const sidebarWidthClass = collapsed ? 'w-[120px]' : 'w-[260px]';
+  const contentMarginClass = collapsed ? 'lg:ml-[120px]' : 'lg:ml-[260px]';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-barlow text-[#1E293B]">

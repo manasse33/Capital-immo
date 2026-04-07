@@ -11,6 +11,7 @@
 
 export const staticAssets = {
   logo: new URL('./logo-navbar-white-cropped.png', import.meta.url).href,
+  mark: new URL('./logo-navbar-house-cropped.png', import.meta.url).href,
   // logoWhite: new URL('./logo-white.svg', import.meta.url).href,
   // heroBanner: new URL('./hero-banner.jpg', import.meta.url).href,
 } as const;
