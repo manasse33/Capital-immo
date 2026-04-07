@@ -149,6 +149,12 @@ export default function AdminBiens() {
   const hasActiveFilters =
     search.length > 0 || typeFilter !== 'all' || transactionFilter !== 'all' || statutFilter !== 'all';
 
+  const totalBiens = biens.length;
+  const disponiblesCount = biens.filter((bien) => bien.statut === 'disponible').length;
+  const vedettesCount = biens.filter((bien) => bien.en_vedette).length;
+  const locationsCount = biens.filter((bien) => bien.transaction === 'location').length;
+  const selectedCount = selectedIds.length;
+
   const referencePlaceholder = useMemo(() => {
     if (!form.titre.trim()) return 'CIG-001';
 
@@ -564,7 +570,7 @@ export default function AdminBiens() {
     <div className="space-y-6">
       <PageHeader
         title="Biens immobiliers"
-        subtitle={`${filteredBiens.length} bien(s) dans le catalogue`}
+        subtitle={`${filteredBiens.length} bien(s) affiches sur ${totalBiens} dans le catalogue`}
         action={
           <button
             type="button"
@@ -577,66 +583,104 @@ export default function AdminBiens() {
         }
       />
 
-      <div className="flex flex-wrap gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <label className="relative min-w-[240px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Rechercher un bien..."
-            className="h-9 w-full rounded-lg border border-slate-200 pl-10 pr-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-          />
-        </label>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-[1.3rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">Catalogue total</p>
+          <p className="mt-2 text-3xl font-bold text-[#0D354E]">{totalBiens}</p>
+        </div>
+        <div className="rounded-[1.3rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">Disponibles</p>
+          <p className="mt-2 text-3xl font-bold text-[#0D354E]">{disponiblesCount}</p>
+        </div>
+        <div className="rounded-[1.3rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">En vedette</p>
+          <p className="mt-2 text-3xl font-bold text-[#0D354E]">{vedettesCount}</p>
+        </div>
+        <div className="rounded-[1.3rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">Locations</p>
+          <p className="mt-2 text-3xl font-bold text-[#0D354E]">{locationsCount}</p>
+        </div>
+      </section>
 
-        <select
-          value={typeFilter}
-          onChange={(event) => setTypeFilter(event.target.value)}
-          className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-        >
-          <option value="all">Tous les types</option>
-          {types.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+      <div className="rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7A9E9F]">Recherche et filtres</p>
+            <p className="mt-2 text-sm text-slate-500">
+              Affine rapidement le catalogue avant edition ou mise a jour.
+            </p>
+          </div>
 
-        <select
-          value={transactionFilter}
-          onChange={(event) => setTransactionFilter(event.target.value)}
-          className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-        >
-          <option value="all">Toutes transactions</option>
-          {transactions.map((transaction) => (
-            <option key={transaction} value={transaction}>
-              {transaction}
-            </option>
-          ))}
-        </select>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedCount > 0 && (
+              <span className="inline-flex items-center rounded-full bg-[#0D354E]/8 px-3 py-1 text-xs font-semibold text-[#0D354E]">
+                {selectedCount} selectionne(s)
+              </span>
+            )}
 
-        <select
-          value={statutFilter}
-          onChange={(event) => setStatutFilter(event.target.value)}
-          className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
-        >
-          <option value="all">Tous les statuts</option>
-          {statuts.map((statut) => (
-            <option key={statut} value={statut}>
-              {statut}
-            </option>
-          ))}
-        </select>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-500 hover:bg-red-100"
+              >
+                <X className="h-4 w-4" />
+                Reinitialiser
+              </button>
+            )}
+          </div>
+        </div>
 
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-500 hover:bg-red-100"
+        <div className="mt-4 flex flex-wrap gap-3">
+          <label className="relative min-w-[240px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Rechercher un bien..."
+              className="h-10 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+            />
+          </label>
+
+          <select
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            className="h-10 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
           >
-            <X className="h-4 w-4" />
-            Reset
-          </button>
-        )}
+            <option value="all">Tous les types</option>
+            {types.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={transactionFilter}
+            onChange={(event) => setTransactionFilter(event.target.value)}
+            className="h-10 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+          >
+            <option value="all">Toutes transactions</option>
+            {transactions.map((transaction) => (
+              <option key={transaction} value={transaction}>
+                {transaction}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={statutFilter}
+            onChange={(event) => setStatutFilter(event.target.value)}
+            className="h-10 rounded-xl border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
+          >
+            <option value="all">Tous les statuts</option>
+            {statuts.map((statut) => (
+              <option key={statut} value={statut}>
+                {statut}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <DataTable
@@ -644,6 +688,7 @@ export default function AdminBiens() {
         data={filteredBiens}
         loading={loading}
         rowKey={(bien) => bien.id}
+        onRowClick={openEditDrawer}
         rowClassName={(bien) =>
           `group ${bien.statut !== 'disponible' ? 'opacity-60' : ''}`
         }
@@ -719,14 +764,14 @@ export default function AdminBiens() {
                 <textarea
                   value={form.description}
                   onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                  placeholder="DÃ©crire le bien en dÃ©tails..."
+                  placeholder="Decrire le bien en dentails..."
                   rows={4}
                   required
                   className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
                 />
               </label>
               <label className="grid gap-2">
-                <FieldLabel label="RÃ©fÃ©rence (optionnel)" />
+                <FieldLabel label="Reference (optionnel)" />
                 <input
                   value={form.reference ?? ''}
                   onChange={(event) => setForm((prev) => ({ ...prev, reference: event.target.value }))}
@@ -813,7 +858,7 @@ export default function AdminBiens() {
                   className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-700 focus:border-[#7A9E9F] focus:outline-none focus:ring-2 focus:ring-[#7A9E9F]/20"
                   required
                 >
-                  <option value="">SÃ©lectionner</option>
+                  <option value="">Selectionner</option>
                   <option value="mensuel">Location mensuelle</option>
                   <option value="journalier">Location journaliÃ¨re</option>
                 </select>
@@ -927,7 +972,7 @@ export default function AdminBiens() {
               Equipements
             </h3>
             <label className="grid gap-2">
-              <FieldLabel label="Ã‰quipements (une ligne par item)" />
+              <FieldLabel label="Equipements (une ligne par item)" />
               <textarea
                 value={equipementsText}
                 onChange={(event) => setEquipementsText(event.target.value)}

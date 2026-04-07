@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  ArrowRight,
   Bell,
   Briefcase,
   Building2,
@@ -418,6 +419,14 @@ export default function AdminLayout() {
               </div>
 
               <div className="flex items-center gap-4">
+                <Link
+                  to="/admin/biens"
+                  className="hidden items-center gap-2 rounded-xl bg-[#0D354E] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(13,53,78,0.12)] transition-transform hover:-translate-y-0.5 md:inline-flex"
+                >
+                  Gerer les biens
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
                 <div ref={notifRef} className="relative">
                   <button
                     type="button"

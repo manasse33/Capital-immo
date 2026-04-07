@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CheckCircle, Home, MessageSquare, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle, Home, MessageSquare, RefreshCw, Settings, Star, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -28,11 +28,18 @@ export default function AdminDashboard() {
   const [activity, setActivity] = useState<ApiDashboardActivity | null>(null);
   const [charts, setCharts] = useState<ApiDashboardCharts | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadDashboard = async () => {
+      if (isMounted) {
+        setLoading(true);
+        setDashboardError(null);
+      }
+
       try {
         const [statsData, activityData, chartsData] = await Promise.all([
           getDashboardStats(),
@@ -46,6 +53,9 @@ export default function AdminDashboard() {
           setCharts(chartsData);
         }
       } catch {
+        if (isMounted) {
+          setDashboardError('Impossible de charger le tableau de bord.');
+        }
         toast.error('Impossible de charger le dashboard');
       } finally {
         if (isMounted) {
@@ -59,7 +69,7 @@ export default function AdminDashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [reloadToken]);
 
   const latestBiens = (activity?.derniers_biens ?? []).slice(0, 5);
   const latestContacts = (activity?.derniers_contacts ?? []).slice(0, 5);
@@ -69,9 +79,126 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dashboard"
+        title="Tableau de bord"
         subtitle="Vue d'ensemble de l'activite immobiliere et commerciale."
+        action={
+          <>
+            <button
+              type="button"
+              onClick={() => setReloadToken((prev) => prev + 1)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:border-[#7A9E9F]/40 hover:text-[#0D354E]"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Actualiser
+            </button>
+            <Link
+              to="/admin/biens"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0D354E] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,53,78,0.12)] transition-transform hover:-translate-y-0.5"
+            >
+              Gerer les biens
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </>
+        }
       />
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.95fr]">
+        <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7A9E9F]">
+                Actions rapides
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-800">
+                Accede vite aux taches les plus frequentes.
+              </h2>
+            </div>
+            {!loading && stats && (
+              <div className="rounded-full bg-[#7A9E9F]/10 px-3 py-1 text-xs font-semibold text-[#0D354E]">
+                {stats.contacts.non_lus} contact(s) non lu(s)
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Link
+              to="/admin/biens"
+              className="rounded-[1.2rem] border border-[#0D354E]/8 bg-[#0D354E]/[0.03] p-4 transition-colors hover:border-[#0D354E]/20 hover:bg-[#0D354E]/[0.05]"
+            >
+              <Home className="h-5 w-5 text-[#0D354E]" />
+              <p className="mt-4 text-sm font-semibold text-slate-800">Catalogue des biens</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Mettre a jour les annonces et disponibilites.</p>
+            </Link>
+
+            <Link
+              to="/admin/contacts"
+              className="rounded-[1.2rem] border border-[#7A9E9F]/15 bg-[#7A9E9F]/[0.06] p-4 transition-colors hover:border-[#7A9E9F]/30 hover:bg-[#7A9E9F]/[0.09]"
+            >
+              <MessageSquare className="h-5 w-5 text-[#7A9E9F]" />
+              <p className="mt-4 text-sm font-semibold text-slate-800">Demandes clients</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Prioriser les messages et repondre plus vite.</p>
+            </Link>
+
+            <Link
+              to="/admin/services"
+              className="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:border-slate-300 hover:bg-slate-50"
+            >
+              <Star className="h-5 w-5 text-amber-500" />
+              <p className="mt-4 text-sm font-semibold text-slate-800">Services</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Verifier l'offre et les contenus de service.</p>
+            </Link>
+
+            <Link
+              to="/admin/entreprise"
+              className="rounded-[1.2rem] border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50/70"
+            >
+              <Settings className="h-5 w-5 text-slate-500" />
+              <p className="mt-4 text-sm font-semibold text-slate-800">Entreprise</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Mettre a jour les infos visibles sur le site.</p>
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7A9E9F]">Priorites</p>
+          <div className="mt-4 space-y-3">
+            <div className="rounded-[1.1rem] bg-slate-50 px-4 py-3">
+              <p className="text-sm font-medium text-slate-700">Contacts non lus</p>
+              <p className="mt-1 text-2xl font-bold text-[#0D354E]">{stats?.contacts.non_lus ?? 0}</p>
+            </div>
+            <div className="rounded-[1.1rem] bg-slate-50 px-4 py-3">
+              <p className="text-sm font-medium text-slate-700">Biens reserves</p>
+              <p className="mt-1 text-2xl font-bold text-[#0D354E]">{stats?.biens.reserves ?? 0}</p>
+            </div>
+            <div className="rounded-[1.1rem] bg-slate-50 px-4 py-3">
+              <p className="text-sm font-medium text-slate-700">Equipe</p>
+              <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                <Users className="h-4 w-4 text-[#7A9E9F]" />
+                <span>Garder les fiches et contenus a jour.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {dashboardError && !loading && (
+        <section className="rounded-[1.4rem] border border-red-100 bg-red-50/80 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-red-700">Chargement incomplet</h3>
+              <p className="mt-1 text-sm text-red-600">{dashboardError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReloadToken((prev) => prev + 1)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reessayer
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatsCard
