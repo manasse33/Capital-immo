@@ -23,10 +23,15 @@ import AdminEquipe from './pages/admin/Equipe';
 import AdminContacts from './pages/admin/Contacts';
 import AdminConfigurations from './pages/admin/Configurations';
 import AdminEntreprise from './pages/admin/Entreprise';
+import { applySeo, resolveSeo } from './seo';
 
 function AppShell({ isLoading }: { isLoading: boolean }) {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+
+  useEffect(() => {
+    applySeo(resolveSeo(location.pathname));
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col">

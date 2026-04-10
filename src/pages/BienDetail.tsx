@@ -11,6 +11,7 @@ import { useEntrepriseInfo } from '../hooks/useEntrepriseInfo';
 import { formatPrix } from '../utils/format';
 import CarteBien from '../components/CarteBien';
 import WhatsAppButton from '../components/WhatsAppButton';
+import { applyJsonLd, applySeo, buildBienSeo } from '../seo';
 
 export default function BienDetail() {
   const { entreprise } = useEntrepriseInfo();
@@ -67,6 +68,73 @@ export default function BienDetail() {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!bien) {
+      return;
+    }
+
+    const description =
+      bien.description?.trim() ||
+      `Bien immobilier à ${bien.quartier}, ${bien.zone}. Découvrez les détails, prix et caractéristiques.`;
+
+    applySeo(
+      buildBienSeo({
+        titre: bien.titre,
+        description,
+        image: bien.images?.[0],
+        path: typeof window !== 'undefined' ? window.location.pathname : `/biens/${bien.id}`,
+        reference: bien.reference,
+      })
+    );
+
+    const availability =
+      bien.statut === 'disponible'
+        ? 'https://schema.org/InStock'
+        : bien.statut === 'reserve'
+          ? 'https://schema.org/Reserved'
+          : 'https://schema.org/SoldOut';
+
+    const url =
+      typeof window !== 'undefined'
+        ? window.location.href
+        : `https://capital-immo-group.com/biens/${bien.id}`;
+
+    applyJsonLd('bien', {
+      '@context': 'https://schema.org',
+      '@type': 'RealEstateListing',
+      name: bien.titre,
+      description,
+      image: bien.images?.length ? bien.images : undefined,
+      url,
+      identifier: bien.reference
+        ? {
+            '@type': 'PropertyValue',
+            name: 'Référence',
+            value: bien.reference,
+          }
+        : undefined,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: bien.quartier,
+        addressRegion: bien.zone,
+        addressCountry: 'CG',
+      },
+      offers: {
+        '@type': 'Offer',
+        price: bien.prix,
+        priceCurrency: 'XAF',
+        availability,
+      },
+      seller: {
+        '@type': 'RealEstateAgent',
+        name: entreprise.nom,
+        telephone: entreprise.telephone,
+        email: entreprise.email,
+        url: 'https://capital-immo-group.com/',
+      },
+    });
+  }, [bien, entreprise]);
 
   if (loading) {
     return (

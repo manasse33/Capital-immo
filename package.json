@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "node ./node_modules/typescript/bin/tsc -b && vite build",
+    "build:seo": "node ./scripts/generate-sitemap.mjs && node ./node_modules/typescript/bin/tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seo:sitemap": "node ./scripts/generate-sitemap.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
