@@ -8,19 +8,19 @@ export const DEFAULT_AVATAR =
 
 export const defaultEntrepriseInfo: UiEntrepriseInfo = {
   nom: 'Capital Immo Group',
-  slogan: "Plus qu'un bien immobilier, nous trouvons le lieu où commence votre histoire.",
-  adresse: 'Rue Monseigneur Biéchy 2015, Brazzaville, République du Congo',
+  slogan: "Plus qu'un bien immobilier, nous trouvons le lieu oï¿½ commence votre histoire.",
+  adresse: 'Rue Monseigneur Biï¿½chy 2015, Brazzaville, Rï¿½publique du Congo',
   telephone: '+242 04 411 3436',
   whatsapp: '+242 04 411 3436',
-  email: 'contact@capitalimogroup.com',
+  email: 'contact@capital-immo-group.com',
   facebook: '@capitalimogroup01',
   facebookUrl: 'https://facebook.com/capitalimogroup01',
   description:
-    "Capital Immo Group est une agence immobilière de référence à Brazzaville, spécialisée dans la vente, la location et la gestion de biens immobiliers.",
+    "Capital Immo Group est une agence immobiliï¿½re de rï¿½fï¿½rence ï¿½ Brazzaville, spï¿½cialisï¿½e dans la vente, la location et la gestion de biens immobiliers.",
   histoire:
-    "Fondée en 2011 par Julio KIBONGUI, Capital Immo Group est née d'une vision : professionnaliser le secteur immobilier en République du Congo et offrir aux clients un service à la hauteur de leurs attentes.",
+    "Fondï¿½e en 2011 par Julio KIBONGUI, Capital Immo Group est nï¿½e d'une vision : professionnaliser le secteur immobilier en Rï¿½publique du Congo et offrir aux clients un service ï¿½ la hauteur de leurs attentes.",
   mission:
-    "Accompagner nos clients avec professionnalisme et intégrité dans la réalisation de leurs projets immobiliers, en leur offrant un service personnalisé et des solutions adaptées à leurs besoins.",
+    "Accompagner nos clients avec professionnalisme et intï¿½gritï¿½ dans la rï¿½alisation de leurs projets immobiliers, en leur offrant un service personnalisï¿½ et des solutions adaptï¿½es ï¿½ leurs besoins.",
   dateCreation: 2011,
   clientsSatisfaits: 500,
   heroImageUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920',
@@ -29,25 +29,25 @@ export const defaultEntrepriseInfo: UiEntrepriseInfo = {
     {
       titre: 'Confiance',
       description:
-        "La transparence et l'honnêteté sont au cœur de chaque relation que nous établissons avec nos clients.",
+        "La transparence et l'honnï¿½tetï¿½ sont au cï¿½ur de chaque relation que nous ï¿½tablissons avec nos clients.",
       icon: 'Shield',
     },
     {
-      titre: 'Proximité',
+      titre: 'Proximitï¿½',
       description:
-        "Nous connaissons intimement le marché immobilier congolais et maintenons une relation personnalisée avec chaque client.",
+        "Nous connaissons intimement le marchï¿½ immobilier congolais et maintenons une relation personnalisï¿½e avec chaque client.",
       icon: 'Heart',
     },
     {
       titre: 'Excellence',
       description:
-        "Nous visons l'excellence dans chaque service rendu, de la première prise de contact à la finalisation de la transaction.",
+        "Nous visons l'excellence dans chaque service rendu, de la premiï¿½re prise de contact ï¿½ la finalisation de la transaction.",
       icon: 'Award',
     },
     {
       titre: 'Transparence',
       description:
-        "Nos honoraires sont clairs, nos processus sont expliqués, et nous communiquons régulièrement sur l'avancement de votre dossier.",
+        "Nos honoraires sont clairs, nos processus sont expliquï¿½s, et nous communiquons rï¿½guliï¿½rement sur l'avancement de votre dossier.",
       icon: 'Eye',
     },
   ],
@@ -58,7 +58,7 @@ export const defaultEntrepriseInfo: UiEntrepriseInfo = {
     jeudi: '08:00 - 17:00',
     vendredi: '08:00 - 17:00',
     samedi: '09:00 - 13:00',
-    dimanche: 'Fermé',
+    dimanche: 'Fermï¿½',
   },
   coordonnees: {
     lat: -4.2634,
@@ -70,8 +70,8 @@ export const defaultBiensFilters: UiBienFilters = {
   zones: [
     'Toutes les zones',
     'Centre-ville',
-    'Périphérie',
-    'Ouenzé',
+    'Pï¿½riphï¿½rie',
+    'Ouenzï¿½',
     'Poto-Poto',
     'Bacongo',
     'Mfilou',

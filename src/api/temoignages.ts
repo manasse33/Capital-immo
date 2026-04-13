@@ -36,7 +36,8 @@ export const createTemoignage = async (payload: TemoignagePayload) => {
 
 export const updateTemoignage = async (id: string | number, payload: Partial<TemoignagePayload>) => {
   const formData = toFormData(payload);
-  const response = await api.put<ApiTemoignage>(`/temoignages/${id}`, formData);
+  formData.append('_method', 'PUT');
+  const response = await api.post<ApiTemoignage>(`/temoignages/${id}`, formData);
   return response.data;
 };
 

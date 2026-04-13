@@ -37,7 +37,8 @@ export const createMembreEquipe = async (payload: MembreEquipePayload) => {
 
 export const updateMembreEquipe = async (id: string | number, payload: Partial<MembreEquipePayload>) => {
   const formData = toFormData(payload);
-  const response = await api.put<ApiMembreEquipe>(`/equipe/${id}`, formData);
+  formData.append('_method', 'PUT');
+  const response = await api.post<ApiMembreEquipe>(`/equipe/${id}`, formData);
   return response.data;
 };
 

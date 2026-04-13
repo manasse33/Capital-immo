@@ -37,7 +37,8 @@ export const createService = async (payload: ServicePayload) => {
 
 export const updateService = async (serviceId: string | number, payload: Partial<ServicePayload>) => {
   const formData = toFormData(payload);
-  const response = await api.put<ApiService>(`/services/${serviceId}`, formData);
+  formData.append('_method', 'PUT');
+  const response = await api.post<ApiService>(`/services/${serviceId}`, formData);
   return response.data;
 };
 

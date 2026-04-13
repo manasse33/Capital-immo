@@ -81,7 +81,8 @@ export const createBien = async (payload: BienPayload) => {
 
 export const updateBien = async (bienId: string | number, payload: Partial<BienPayload>) => {
   const formData = toFormData(payload);
-  const response = await api.put<ApiBien>(`/biens/${bienId}`, formData);
+  formData.append('_method', 'PUT');
+  const response = await api.post<ApiBien>(`/biens/${bienId}`, formData);
   return response.data;
 };
 

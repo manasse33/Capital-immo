@@ -85,7 +85,7 @@ export const entrepriseInfo = {
   adresse: 'Rue Monseigneur Biéchy 2015, Brazzaville, République du Congo',
   telephone: '+242 04 411 3436',
   whatsapp: '+242 04 411 3436',
-  email: 'contact@capitalimogroup.com',
+  email: 'contact@capital-immo-group.com',
   facebook: '@capitalimogroup01',
   facebookUrl: 'https://facebook.com/capitalimogroup01',
   horaires: {
